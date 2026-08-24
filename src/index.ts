@@ -22,10 +22,30 @@ app.get('/api/search-rules', async (c) => {
   return c.json({ rules: results || [] });
 });
 
+// GET /api/debug-env
+app.get('/api/debug-env', (c) => {
+  const keys = Object.keys(c.env || {});
+  const hasYoutubeKey = Boolean(c.env.YOUTUBE_API_KEY);
+  return c.json({ keys, hasYoutubeKey });
+});
+
 // POST /api/admin/search-rules/:id/run
 app.post('/api/admin/search-rules/:id/run', async (c) => {
   const ruleId = parseInt(c.req.param('id'), 10);
-  const apiKey = c.env.YOUTUBE_API_KEY;
+  let apiKey = c.env.YOUTUBE_API_KEY;
+  if (!apiKey && typeof process !== 'undefined' && process.env) {
+    apiKey = process.env.YOUTUBE_API_KEY;
+  }
+
+  // Debug fallback: if binding key has unexpected name, check c.env keys
+  if (!apiKey && c.env) {
+    for (const [k, v] of Object.entries(c.env)) {
+      if (k.toUpperCase().includes('YOUTUBE') && typeof v === 'string') {
+        apiKey = v;
+        break;
+      }
+    }
+  }
 
   if (!apiKey) {
     return c.json({ error: 'YOUTUBE_API_KEY secret is not configured' }, 500);
@@ -37,8 +57,8 @@ app.post('/api/admin/search-rules/:id/run', async (c) => {
     const result = await pipeline.runSearchRule(ruleId);
     return c.json(result);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return c.json({ error: message }, 500);
+    const message = err instanceof Error ? (err.stack || err.message) : String(err);
+    return c.json({ error: `Pipeline Error: ${message}` }, 500);
   }
 });
 

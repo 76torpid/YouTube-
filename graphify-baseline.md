@@ -78,3 +78,12 @@ LINE Channel Subscriber
 - **Actual Migration File**: `migrations/0000_init.sql` defining `search_rules`, `videos`, `articles`, `notifications` (`UNIQUE(article_id, destination_type, destination_hash)`), `app_settings`.
 - **Actual Graphify Check Command**: `npm run graphify:check`.
 
+## 11. Phase 2 Verified Implementation Facts
+- **Verified News & Politics Category ID**: `25` (`videoCategories.list` with `regionCode=JP`, `hl=ja` confirmed ID `25` as `ニュースと政治`).
+- **Actual YouTube Query Contract**: `part=snippet`, `type=video`, `order=date`, `regionCode=JP`, `relevanceLanguage=ja`, `videoCategoryId=25`, `q=<keyword>`, `publishedAfter=<iso_date>`.
+- **Actual Metadata Mapping**: `videoId` (Primary Key), `channelId`, `channelTitle`, `title`, `description`, `publishedAt`, `youtubeUrl` (`https://www.youtube.com/watch?v={videoId}`), `thumbnailUrl`.
+- **Actual Application Deduplication**: `video_id` query check prior to D1 insertion in `SharedIngestionPipeline` (`src/services/ingestion/index.ts`).
+- **Actual Ingestion Route**: `POST /api/admin/search-rules/:id/run` executing shared `SharedIngestionPipeline.runSearchRule(ruleId)`.
+- **Actual Source Basis Contract**: `youtube_metadata` for raw YouTube metadata projection prior to Workers AI generation.
+
+
