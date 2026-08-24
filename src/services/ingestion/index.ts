@@ -1,4 +1,6 @@
 import { NormalizedVideo, YouTubeService } from '../youtube';
+import { ArticleGenerationService } from '../ai';
+import { LineNotificationService } from '../line';
 
 export interface SearchRuleRow {
   id: number;
@@ -15,15 +17,29 @@ export interface IngestionResult {
   fetched: number;
   inserted: number;
   duplicates: number;
+  aiGenerated: number;
+  aiFailed: number;
+  lineSent: number;
+  lineFailed: number;
+  lastAiError?: string;
+}
+
+export interface PipelineOptions {
+  aiBinding?: Ai;
+  lineAccessToken?: string;
+  lineTargetId?: string;
+  baseUrl?: string;
 }
 
 export class SharedIngestionPipeline {
   private db: D1Database;
   private youtube: YouTubeService;
+  private options: PipelineOptions;
 
-  constructor(db: D1Database, youtubeKey: string) {
+  constructor(db: D1Database, youtubeKey: string, options: PipelineOptions = {}) {
     this.db = db;
     this.youtube = new YouTubeService(youtubeKey);
+    this.options = options;
   }
 
   async runSearchRule(ruleId: number): Promise<IngestionResult> {
@@ -50,16 +66,28 @@ export class SharedIngestionPipeline {
 
     let inserted = 0;
     let duplicates = 0;
+    let aiGenerated = 0;
+    let aiFailed = 0;
+    let lineSent = 0;
+    let lineFailed = 0;
+
+    const baseUrl = this.options.baseUrl || 'https://news.akimu.org';
+    const aiService = this.options.aiBinding ? new ArticleGenerationService(this.options.aiBinding) : null;
+    const lineService = (this.options.lineAccessToken && this.options.lineTargetId)
+      ? new LineNotificationService(this.db, this.options.lineAccessToken, this.options.lineTargetId)
+      : null;
+
+    let lastAiError: string | undefined;
 
     // 4. Ingest into D1 with video_id canonical deduplication
     for (const v of videos) {
-      // Check if video_id already exists in D1
-      const existing = await this.db
+      // Check if video_id already exists in D1 videos table
+      const existingVideo = await this.db
         .prepare('SELECT video_id FROM videos WHERE video_id = ?')
         .bind(v.videoId)
         .first();
 
-      if (existing) {
+      if (existingVideo) {
         duplicates++;
         continue;
       }
@@ -84,17 +112,98 @@ export class SharedIngestionPipeline {
           .run();
         inserted++;
       } catch (err: unknown) {
-        // Handle DB constraint failure gracefully if race condition occurs
         const message = err instanceof Error ? err.message : String(err);
-        if (message.includes('UNIQUE') || message.includes('PRIMARYKEY')) {
+        if (message.includes('UNIQUE') || message.includes('PRIMARYKEY') || message.includes('PRIMARY KEY')) {
           duplicates++;
+          continue;
         } else {
           throw err;
         }
       }
+
+      // 5. Workers AI article generation if AI binding is available
+      if (aiService) {
+        try {
+          // Check if article for this video_id already exists
+          const existingArticle = await this.db
+            .prepare('SELECT id FROM articles WHERE video_id = ?')
+            .bind(v.videoId)
+            .first();
+
+          if (!existingArticle) {
+            const articleData = await aiService.generateArticle({
+              title: v.title,
+              description: v.description,
+              channelTitle: v.channelTitle,
+              publishedAt: v.publishedAt
+            });
+
+            const bulletPointsJson = JSON.stringify(articleData.bulletPoints);
+            const tagsJson = JSON.stringify(articleData.tags);
+
+            const pref = articleData.location?.prefecture || null;
+            const city = articleData.location?.city || null;
+            const locName = articleData.location?.locationName || null;
+            const addr = articleData.location?.address || null;
+            const lat = articleData.location?.latitude || null;
+            const lng = articleData.location?.longitude || null;
+            const conf = articleData.location?.confidence || null;
+
+            const res = await this.db
+              .prepare(
+                `INSERT INTO articles (
+                  video_id, headline, summary, category, prefecture, city, location_name, address, latitude, longitude,
+                  source_basis, ai_model, ai_confidence, bullet_points, tags, location_confidence, incident_type
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+              )
+              .bind(
+                v.videoId,
+                articleData.headline,
+                articleData.summary,
+                articleData.category,
+                pref,
+                city,
+                locName,
+                addr,
+                lat,
+                lng,
+                'youtube_metadata',
+                '@cf/meta/llama-3-8b-instruct',
+                conf,
+                bulletPointsJson,
+                tagsJson,
+                conf,
+                articleData.incidentType
+              )
+              .run();
+
+            aiGenerated++;
+
+            const newArticleId = res.meta.last_row_id;
+
+            // 6. Send LINE notification if lineService is available
+            if (lineService && newArticleId) {
+              const articleUrl = `${baseUrl}/n/${newArticleId}`;
+              const lineRes = await lineService.notifyNewArticle(
+                Number(newArticleId),
+                articleData.headline,
+                articleData.summary,
+                v.channelTitle,
+                articleUrl
+              );
+              if (lineRes.sent) lineSent++;
+              if (lineRes.error) lineFailed++;
+            }
+          }
+        } catch (aiErr) {
+          lastAiError = aiErr instanceof Error ? (aiErr.stack || aiErr.message) : String(aiErr);
+          console.error(`AI article generation failed for video ${v.videoId}:`, lastAiError);
+          aiFailed++;
+        }
+      }
     }
 
-    // 5. Update last_checked_at on search_rules
+    // 7. Update last_checked_at on search_rules
     const nowIso = new Date().toISOString();
     await this.db
       .prepare('UPDATE search_rules SET last_checked_at = ?, updated_at = ? WHERE id = ?')
@@ -106,7 +215,12 @@ export class SharedIngestionPipeline {
       keyword: ruleRow.keyword,
       fetched: videos.length,
       inserted,
-      duplicates
+      duplicates,
+      aiGenerated,
+      aiFailed,
+      lineSent,
+      lineFailed,
+      lastAiError
     };
   }
 }

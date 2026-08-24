@@ -7,7 +7,8 @@
     "nodejs_compat"
   ],
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
   },
   "d1_databases": [
     {
@@ -17,7 +18,8 @@
     }
   ],
   "ai": {
-    "binding": "AI"
+    "binding": "AI",
+    "remote": true
   },
   "triggers": {
     "crons": [
