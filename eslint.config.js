@@ -5,7 +5,7 @@ import reactHooksPlugin from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'graphify-out/**']
+    ignores: ['dist/**', 'node_modules/**', 'graphify-out/**', '.wrangler/**']
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
