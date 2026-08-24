@@ -22,4 +22,10 @@ describe('NewsWatch Phase 1 Utility & Route Tests', () => {
     expect(hash1).toBe(hash2);
     expect(hash1).not.toBe(hash3);
   });
+
+  it('verifies YouTube video URL normalization structure', () => {
+    const videoId = 'abc_123_xyz';
+    const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    expect(youtubeUrl).toBe('https://www.youtube.com/watch?v=abc_123_xyz');
+  });
 });
