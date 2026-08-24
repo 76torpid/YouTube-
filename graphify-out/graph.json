@@ -1,0 +1,170 @@
+{
+  "nodes": [
+    {
+      "id": "NewsWatch System Architecture",
+      "type": "Architecture",
+      "name": "NewsWatch System Architecture",
+      "content": "Canonical node: NewsWatch System Architecture",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch Production Contract",
+      "type": "Contract",
+      "name": "NewsWatch Production Contract",
+      "content": "Canonical node: NewsWatch Production Contract",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch Development Lifecycle Policy",
+      "type": "Policy",
+      "name": "NewsWatch Development Lifecycle Policy",
+      "content": "Canonical node: NewsWatch Development Lifecycle Policy",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch YouTube Ingestion Contract",
+      "type": "Contract",
+      "name": "NewsWatch YouTube Ingestion Contract",
+      "content": "Canonical node: NewsWatch YouTube Ingestion Contract",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch Video Deduplication Contract",
+      "type": "Contract",
+      "name": "NewsWatch Video Deduplication Contract",
+      "content": "Canonical node: NewsWatch Video Deduplication Contract",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch Canonical Data Flow",
+      "type": "DataFlow",
+      "name": "NewsWatch Canonical Data Flow",
+      "content": "Canonical node: NewsWatch Canonical Data Flow",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch AI Source Boundary",
+      "type": "Boundary",
+      "name": "NewsWatch AI Source Boundary",
+      "content": "Canonical node: NewsWatch AI Source Boundary",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch Location Extraction Contract",
+      "type": "Contract",
+      "name": "NewsWatch Location Extraction Contract",
+      "content": "Canonical node: NewsWatch Location Extraction Contract",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch LINE Notification Contract",
+      "type": "Contract",
+      "name": "NewsWatch LINE Notification Contract",
+      "content": "Canonical node: NewsWatch LINE Notification Contract",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch Scheduler Contract",
+      "type": "Contract",
+      "name": "NewsWatch Scheduler Contract",
+      "content": "Canonical node: NewsWatch Scheduler Contract",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch Security Boundary",
+      "type": "Boundary",
+      "name": "NewsWatch Security Boundary",
+      "content": "Canonical node: NewsWatch Security Boundary",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch Admin Authentication Contract",
+      "type": "Contract",
+      "name": "NewsWatch Admin Authentication Contract",
+      "content": "Canonical node: NewsWatch Admin Authentication Contract",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    },
+    {
+      "id": "NewsWatch Production Deployment Contract",
+      "type": "Contract",
+      "name": "NewsWatch Production Deployment Contract",
+      "content": "Canonical node: NewsWatch Production Deployment Contract",
+      "source_file": "graphify-baseline.md",
+      "status": "VERIFIED"
+    }
+  ],
+  "edges": [
+    {
+      "source": "NewsWatch System Architecture",
+      "target": "Cloudflare Workers",
+      "type": "USES"
+    },
+    {
+      "source": "Cloudflare Workers",
+      "target": "D1",
+      "type": "USES"
+    },
+    {
+      "source": "Cloudflare Workers",
+      "target": "Workers AI",
+      "type": "USES"
+    },
+    {
+      "source": "NewsWatch System Architecture",
+      "target": "YouTube Data API v3",
+      "type": "INGESTS_FROM"
+    },
+    {
+      "source": "YouTube Video",
+      "target": "videoId",
+      "type": "IDENTIFIED_BY"
+    },
+    {
+      "source": "Search Rule",
+      "target": "Video",
+      "type": "PRODUCES"
+    },
+    {
+      "source": "Video",
+      "target": "Article",
+      "type": "PRODUCES"
+    },
+    {
+      "source": "Article",
+      "target": "LINE Notification",
+      "type": "PRODUCES"
+    },
+    {
+      "source": "Article",
+      "target": "Google Maps",
+      "type": "LINKS_TO"
+    },
+    {
+      "source": "Article",
+      "target": "YouTube Source",
+      "type": "LINKS_TO"
+    },
+    {
+      "source": "Admin",
+      "target": "Cloudflare Access",
+      "type": "PROTECTED_BY"
+    }
+  ],
+  "metadata": {
+    "generated_at": "2026-08-24T06:37:05.672Z",
+    "source_file": "graphify-baseline.md",
+    "version": "1.0.0"
+  }
+}
