@@ -75,6 +75,6 @@ LINE Channel Subscriber
 - **Actual D1 Binding**: `d1_databases[0].binding = "DB"`, `database_name = "newswatch-line-db"`.
 - **Actual Workers AI Binding**: `ai.binding = "AI"`.
 - **Actual Cron Trigger**: `triggers.crons = ["*/5 * * * *"]`.
-- **Actual Migration File**: `migrations/0000_init.sql` defining `search_rules`, `videos`, `articles`, `notifications`, `app_settings`.
+- **Actual Migration File**: `migrations/0000_init.sql` defining `search_rules`, `videos`, `articles`, `notifications` (`UNIQUE(article_id, destination_type, destination_hash)`), `app_settings`.
 - **Actual Graphify Check Command**: `npm run graphify:check`.
 

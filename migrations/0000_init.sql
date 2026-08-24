@@ -51,11 +51,12 @@ CREATE TABLE IF NOT EXISTS notifications (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   article_id INTEGER NOT NULL REFERENCES articles(id),
   destination_type TEXT NOT NULL DEFAULT 'line',
+  destination_hash TEXT NOT NULL DEFAULT 'default',
   sent_at TEXT,
   status TEXT NOT NULL DEFAULT 'pending',
   error_code TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(article_id, destination_type)
+  UNIQUE(article_id, destination_type, destination_hash)
 );
 
 -- Create app_settings table
