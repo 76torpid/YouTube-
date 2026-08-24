@@ -19,9 +19,6 @@
   "ai": {
     "binding": "AI"
   },
-  "vars": {
-    "YOUTUBE_API_KEY": "AIzaSyDXAvI1BaA8wS2p0sv04BrqG-dvqj6GBns"
-  },
   "triggers": {
     "crons": [
       "*/5 * * * *"

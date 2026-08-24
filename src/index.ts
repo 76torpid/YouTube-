@@ -22,30 +22,10 @@ app.get('/api/search-rules', async (c) => {
   return c.json({ rules: results || [] });
 });
 
-// GET /api/debug-env
-app.get('/api/debug-env', (c) => {
-  const keys = Object.keys(c.env || {});
-  const hasYoutubeKey = Boolean(c.env.YOUTUBE_API_KEY);
-  return c.json({ keys, hasYoutubeKey });
-});
-
 // POST /api/admin/search-rules/:id/run
 app.post('/api/admin/search-rules/:id/run', async (c) => {
   const ruleId = parseInt(c.req.param('id'), 10);
-  let apiKey = c.env.YOUTUBE_API_KEY;
-  if (!apiKey && typeof process !== 'undefined' && process.env) {
-    apiKey = process.env.YOUTUBE_API_KEY;
-  }
-
-  // Debug fallback: if binding key has unexpected name, check c.env keys
-  if (!apiKey && c.env) {
-    for (const [k, v] of Object.entries(c.env)) {
-      if (k.toUpperCase().includes('YOUTUBE') && typeof v === 'string') {
-        apiKey = v;
-        break;
-      }
-    }
-  }
+  const apiKey = c.env.YOUTUBE_API_KEY;
 
   if (!apiKey) {
     return c.json({ error: 'YOUTUBE_API_KEY secret is not configured' }, 500);
@@ -74,16 +54,16 @@ app.get('/api/articles', async (c) => {
     channelTitle: String(v.channel_title),
     category: 'ニュース・政治',
     publishedAt: String(v.published_at).replace('T', ' ').substring(0, 16),
-    summary: String(v.description) || 'YouTube動画説明文より自動生成',
+    summary: String(v.description) || 'YouTube動画メタデータ情報',
     bulletPoints: [
       `動画ID: ${v.video_id}`,
       `配信元: ${v.channel_title}`,
       `情報ソース: youtube_metadata`
     ],
-    locationName: '日本国内',
-    address: 'YouTube Live / News Video',
-    latitude: 35.6812,
-    longitude: 139.7671,
+    locationName: undefined,
+    address: undefined,
+    latitude: undefined,
+    longitude: undefined,
     tags: ['YouTube', '最新ニュース', 'YouTubeMetadata'],
     thumbnailUrl: String(v.thumbnail_url),
     youtubeUrl: String(v.youtube_url)
