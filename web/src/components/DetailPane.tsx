@@ -70,6 +70,19 @@ export const DetailPane: React.FC<DetailPaneProps> = ({ article }) => {
         >
           <span>▶ YouTubeで動画を視聴</span>
         </a>
+
+        {article.locationName && (
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              article.address || article.locationName
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition shadow-sm"
+          >
+            <span>🗺️ Google Mapsで開く</span>
+          </a>
+        )}
       </div>
     </div>
   );
