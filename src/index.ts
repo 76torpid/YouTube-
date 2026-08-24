@@ -15,9 +15,11 @@ app.get('/api/health', (c) => {
   });
 });
 
+export { app };
+
 export default {
   fetch: app.fetch,
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(event: ScheduledEvent, _env: Env, _ctx: ExecutionContext): Promise<void> {
     console.log(`Cron trigger fired at ${new Date(event.scheduledTime).toISOString()}`);
   }
 };

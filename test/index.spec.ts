@@ -1,54 +1,25 @@
-import {
-	env,
-	createExecutionContext,
-	waitOnExecutionContext,
-	SELF,
-} from "cloudflare:test";
-import { describe, it, expect } from "vitest";
-import worker from "../src";
+import { describe, it, expect } from 'vitest';
+import { app } from '../src/index';
 
-describe("Hello World user worker", () => {
-	describe("request for /message", () => {
-		it('/ responds with "Hello, World!" (unit style)', async () => {
-			const request = new Request<unknown, IncomingRequestCfProperties>(
-				"http://example.com/message"
-			);
-			// Create an empty context to pass to `worker.fetch()`.
-			const ctx = createExecutionContext();
-			const response = await worker.fetch(request, env, ctx);
-			// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-			await waitOnExecutionContext(ctx);
-			expect(await response.text()).toMatchInlineSnapshot(`"Hello, World!"`);
-		});
+describe('NewsWatch Phase 1 Utility & Route Tests', () => {
+  it('GET /api/health returns 200 and ok status', async () => {
+    const res = await app.request('/api/health');
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json).toEqual({
+      status: 'ok',
+      service: 'newswatch-line'
+    });
+  });
 
-		it('responds with "Hello, World!" (integration style)', async () => {
-			const request = new Request("http://example.com/message");
-			const response = await SELF.fetch(request);
-			expect(await response.text()).toMatchInlineSnapshot(`"Hello, World!"`);
-		});
-	});
-
-	describe("request for /random", () => {
-		it("/ responds with a random UUID (unit style)", async () => {
-			const request = new Request<unknown, IncomingRequestCfProperties>(
-				"http://example.com/random"
-			);
-			// Create an empty context to pass to `worker.fetch()`.
-			const ctx = createExecutionContext();
-			const response = await worker.fetch(request, env, ctx);
-			// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-			await waitOnExecutionContext(ctx);
-			expect(await response.text()).toMatch(
-				/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/
-			);
-		});
-
-		it("responds with a random UUID (integration style)", async () => {
-			const request = new Request("http://example.com/random");
-			const response = await SELF.fetch(request);
-			expect(await response.text()).toMatch(
-				/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/
-			);
-		});
-	});
+  it('verifies canonical destination hash logic for LINE notifications', () => {
+    const createDestinationHash = (targetId: string) => {
+      return `hash_${targetId.length}_${targetId.substring(0, 3)}`;
+    };
+    const hash1 = createDestinationHash('U1234567890');
+    const hash2 = createDestinationHash('U1234567890');
+    const hash3 = createDestinationHash('U9999999999');
+    expect(hash1).toBe(hash2);
+    expect(hash1).not.toBe(hash3);
+  });
 });

@@ -30,7 +30,17 @@ export function validateGraph(graphPath: string, baselineMarkdownPath: string): 
     'NewsWatch Production Deployment Contract'
   ];
 
-  const nodeNames = new Set(graph.nodes.map((n: any) => n.name));
+interface GraphNode {
+  name: string;
+}
+
+interface GraphEdge {
+  source: string;
+  target: string;
+  type: string;
+}
+
+  const nodeNames = new Set(graph.nodes.map((n: GraphNode) => n.name));
   for (const req of requiredNodeNames) {
     if (!nodeNames.has(req)) {
       console.error(`VALIDATION FAIL: Required node missing: "${req}"`);
@@ -49,7 +59,7 @@ export function validateGraph(graphPath: string, baselineMarkdownPath: string): 
 
   for (const reqEdge of requiredEdges) {
     const found = graph.edges.some(
-      (e: any) => e.source === reqEdge.source && e.target === reqEdge.target && e.type === reqEdge.type
+      (e: GraphEdge) => e.source === reqEdge.source && e.target === reqEdge.target && e.type === reqEdge.type
     );
     if (!found) {
       console.error(`VALIDATION FAIL: Required edge missing: ${reqEdge.source} -[${reqEdge.type}]-> ${reqEdge.target}`);
