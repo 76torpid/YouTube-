@@ -62,7 +62,7 @@ LINE Channel Subscriber
 
 ## 8. Admin Security & Secrets Boundary
 - `/admin` and `/api/admin/*` paths MUST be protected via Cloudflare Access in Production.
-- Self-hosted Cloudflare Access Application `NewsWatch Admin` (`news.akimu.org/admin`, `news.akimu.org/api/admin`) created and active. Unauthenticated requests redirect to Cloudflare Access Login page.
+- Cloudflare Access authentication end-to-end verified for protected routes while public routes (`/`, `/n/*`, `/api/health`, `/api/articles`) remain publicly accessible.
 - Secrets (`YOUTUBE_API_KEY`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_TARGET_ID`) MUST NEVER be committed to Git or written to source files or logs. Verified Cloudflare Secrets stored remotely.
 
 ## 9. Development Lifecycle Policy
@@ -89,4 +89,4 @@ LINE Channel Subscriber
 - **Actual Workers AI Service**: `ArticleGenerationService` (`src/services/ai/index.ts`) generating structured JSON using `@cf/meta/llama-3.1-8b-instruct-fast`.
 - **Actual LINE Service**: `LineNotificationService` (`src/services/line/index.ts`) with `notifications` table deduplication via `destination_hash`.
 - **Actual Production Deployment**: Deployed to Cloudflare Workers (`newswatch-line`) with custom domain `news.akimu.org`, D1 remote database migrated, Secrets uploaded, E2E ingestion verified (`fetched: 10, inserted: 10, aiGenerated: 10, lineSent: 10`).
-- **Actual Cloudflare Access Application**: Self-hosted application `NewsWatch Admin` (`cad63960-3a6f-498a-9ac4-b3b3b49ca40e`) protecting `news.akimu.org/admin` and `news.akimu.org/api/admin`.
+- **Actual Cloudflare Access Application**: Self-hosted application `NewsWatch Admin` protecting `news.akimu.org/admin` and `news.akimu.org/api/admin`.
