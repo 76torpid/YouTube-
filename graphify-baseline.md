@@ -62,7 +62,7 @@ LINE Channel Subscriber
 
 ## 8. Admin Security & Secrets Boundary
 - `/admin` and `/api/admin/*` paths MUST be protected via Cloudflare Access in Production.
-- Cloudflare Access authentication end-to-end verified for protected routes while public routes (`/`, `/n/*`, `/api/health`, `/api/articles`, `/api/search-rules`) remain publicly accessible.
+- Cloudflare Access authenticated admin end-to-end verified with unique rule creation, immediate execution, and D1 differential persistence while public routes (`/`, `/n/*`, `/api/health`, `/api/articles`, `/api/search-rules`) remain publicly accessible.
 - Secrets (`YOUTUBE_API_KEY`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_TARGET_ID`) MUST NEVER be committed to Git or written to source files or logs. Verified Cloudflare Secrets stored remotely.
 
 ## 9. Keyword & Theme Contracts
