@@ -344,6 +344,24 @@ app.get('/api/articles/:id', async (c) => {
   return c.json({ error: 'Article not found' }, 404);
 });
 
+// GET /n/* (Serve SPA HTML for article permalinks)
+app.get('/n/*', async (c) => {
+  return c.html(`<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>NewsWatch | YouTubeニュース現場マップ＆AI要約</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script type="module" src="/assets/index-DyGZ6qeB.js"></script>
+    <link rel="stylesheet" href="/assets/index--JtZQWZH.css">
+  </head>
+  <body class="bg-slate-900 text-slate-100 antialiased overflow-x-hidden">
+    <div id="root"></div>
+  </body>
+</html>`);
+});
+
 export { app };
 
 export default {
