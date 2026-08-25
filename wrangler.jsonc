@@ -14,12 +14,11 @@
     {
       "binding": "DB",
       "database_name": "newswatch-line-db",
-      "database_id": "local-d1-id"
+      "database_id": "d6f1b2b9-8c1e-4ec8-b31d-ed93f30c4094"
     }
   ],
   "ai": {
-    "binding": "AI",
-    "remote": true
+    "binding": "AI"
   },
   "triggers": {
     "crons": [

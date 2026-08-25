@@ -5,20 +5,21 @@
 - **Repository**: `newswatch-line`
 - **Local Directory**: `i:/マイドライブ/news_akimu/newswatch-line`
 - **Production Domain**: `news.akimu.org` (Production URL: `https://news.akimu.org`)
+- **Deployed Worker Origin**: `https://newswatch-line.2580alarm.workers.dev`
 - **Cloudflare Worker**: `newswatch-line`
-- **Cloudflare D1**: `newswatch-line-db`
+- **Cloudflare D1 Database**: `newswatch-line-db` (`d6f1b2b9-8c1e-4ec8-b31d-ed93f30c4094`)
 - **Forbidden Legacy Domain Notice**: Legacy domain references are strictly forbidden. Production domain is news.akimu.org only.
 
 ## 2. System Architecture
 ```
 GitHub
-  ↓ (Cloudflare Git Integration)
+  ↓ (Cloudflare Git Integration / Wrangler Deploy)
 Cloudflare Workers (newswatch-line)
   ├─ Static Assets / React Frontend (Vite + Tailwind CSS + Leaflet)
   ├─ API Server (Hono)
   ├─ Cron Scheduler (Cloudflare Cron Triggers */5 * * * *)
   ├─ Storage (Cloudflare D1: newswatch-line-db)
-  └─ AI (Cloudflare Workers AI @cf/meta/llama-3-8b-instruct)
+  └─ AI (Cloudflare Workers AI @cf/meta/llama-3.1-8b-instruct-fast)
 
 External Services:
   - YouTube Data API v3 (Japanese News search)
@@ -43,13 +44,13 @@ LINE Channel Subscriber
 - **Primary Canonical Duplicate Key**: `YouTube videoId`
 - `videos.video_id` MUST have UNIQUE / PRIMARY KEY constraint in D1.
 - Duplicate `videoId` found during ingestion MUST be skipped without further AI processing or notification.
-- Notifications MUST check `notifications` table per `article_id + destination_type + destination_hash` to prevent re-sending the same article to the same destination.
+- Notifications MUST check `notifications` table per `article_id + destination_type + destination_hash` to prevent re-sending the same article to the same destination. Verified in production pipeline (`fetched: 10, inserted: 0, duplicates: 10, aiGenerated: 0, lineSent: 0`).
 
 ## 5. AI Source Boundary & Hallucination Guard
 - **Source Basis**: `youtube_metadata` ONLY. Input to AI is restricted to `title`, `description`, `channelTitle`, `publishedAt`.
 - AI MUST NOT be treated as having watched the video.
 - **Hallucination Prevention**: If information (address, prefecture, city, location_name, latitude, longitude) does not exist in the source metadata, AI MUST return `null`. Guessing addresses or details is STRICTLY FORBIDDEN.
-- **Model**: Canonical model is `@cf/meta/llama-3-8b-instruct`.
+- **Model**: Canonical model is `@cf/meta/llama-3.1-8b-instruct-fast`.
 
 ## 6. Location & Google Maps Contract
 - Position data (`address`, `location_name`, `city`, `prefecture`) can only be used if backed by source metadata.
@@ -63,7 +64,7 @@ LINE Channel Subscriber
 ## 8. Admin Security & Secrets Boundary
 - `/admin` and `/api/admin/*` paths MUST be protected via Cloudflare Access in Production.
 - Secrets (`YOUTUBE_API_KEY`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_TARGET_ID`) MUST NEVER be committed to Git or written to source files or logs.
-- Secrets MUST be managed via Cloudflare Secrets and `.dev.vars` locally.
+- Verified Cloudflare Secrets stored remotely: `YOUTUBE_API_KEY`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_TARGET_ID`.
 
 ## 9. Development Lifecycle Policy
 - **Graphify First Rule**: Baseline knowledge graph MUST be checked/established BEFORE scaffolding or writing any code.
@@ -73,18 +74,19 @@ LINE Channel Subscriber
 - **Actual Folder Structure**: `src/index.ts` (Worker), `web/` (React SPA), `migrations/0000_init.sql` (D1), `scripts/graphify/` (Graphify pipeline), `graphify-out/graph.json` (Artifact).
 - **Actual Worker Entrypoint**: `src/index.ts` exporting Hono app (`/api/health`) and `scheduled` cron handler.
 - **Actual Static Assets Config**: `assets.directory = "./dist"`, `assets.not_found_handling = "single-page-application"` configured in `wrangler.jsonc`.
-- **Actual D1 Binding**: `d1_databases[0].binding = "DB"`, `database_name = "newswatch-line-db"`.
+- **Actual D1 Binding**: `d1_databases[0].binding = "DB"`, `database_name = "newswatch-line-db"`, `database_id = "d6f1b2b9-8c1e-4ec8-b31d-ed93f30c4094"`.
 - **Actual Workers AI Binding**: `ai.binding = "AI"`.
 - **Actual Cron Trigger**: `triggers.crons = ["*/5 * * * *"]`.
-- **Actual Migration Files**: `migrations/0000_init.sql` and `migrations/0001_articles_enhance.sql`.
+- **Actual Migration Files**: `migrations/0000_init.sql` and `migrations/0001_articles_enhance.sql` (Both executed and verified on production D1).
 - **Actual Graphify Check Command**: `npm run graphify:check`.
 
-## 11. Full Architecture Verified Implementation Facts
+## 11. Full Production Architecture Verified Implementation Facts
 - **Verified News & Politics Category ID**: `25` (`videoCategories.list` with `regionCode=JP`, `hl=ja` confirmed ID `25` as `ニュースと政治`).
 - **Actual YouTube Query Contract**: `part=snippet`, `type=video`, `order=date`, `regionCode=JP`, `relevanceLanguage=ja`, `videoCategoryId=25`, `q=<keyword>`, `publishedAfter=<iso_date>`.
 - **Actual Metadata Mapping**: `videoId` (Primary Key), `channelId`, `channelTitle`, `title`, `description`, `publishedAt`, `youtubeUrl` (`https://www.youtube.com/watch?v={videoId}`), `thumbnailUrl`.
 - **Actual Application Deduplication**: `video_id` query check prior to D1 insertion in `SharedIngestionPipeline` (`src/services/ingestion/index.ts`).
 - **Actual Search Rules CRUD Routes**: `GET /api/admin/search-rules`, `POST /api/admin/search-rules`, `PATCH /api/admin/search-rules/:id`, `DELETE /api/admin/search-rules/:id`, `POST /api/admin/search-rules/:id/run`.
 - **Actual Articles API Routes**: `GET /api/articles` (JOIN `articles` & `videos`), `GET /api/articles/:id`.
-- **Actual Workers AI Service**: `ArticleGenerationService` (`src/services/ai/index.ts`) generating structured JSON using `@cf/meta/llama-3-8b-instruct`.
+- **Actual Workers AI Service**: `ArticleGenerationService` (`src/services/ai/index.ts`) generating structured JSON using `@cf/meta/llama-3.1-8b-instruct-fast`.
 - **Actual LINE Service**: `LineNotificationService` (`src/services/line/index.ts`) with `notifications` table deduplication via `destination_hash`.
+- **Actual Production Deployment**: Deployed to Cloudflare Workers (`newswatch-line`), D1 remote database migrated, Secrets uploaded, E2E ingestion verified (`fetched: 10, inserted: 10, aiGenerated: 10, lineSent: 10`).

@@ -168,7 +168,7 @@ export class SharedIngestionPipeline {
                 lat,
                 lng,
                 'youtube_metadata',
-                '@cf/meta/llama-3-8b-instruct',
+                '@cf/meta/llama-3.1-8b-instruct-fast',
                 conf,
                 bulletPointsJson,
                 tagsJson,

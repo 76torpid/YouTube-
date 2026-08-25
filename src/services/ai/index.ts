@@ -24,7 +24,7 @@ export interface VideoMetadataInput {
   publishedAt: string;
 }
 
-const AI_MODEL = '@cf/meta/llama-3-8b-instruct';
+const AI_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
 
 const SYSTEM_PROMPT = `あなたはYouTubeニュース動画のメタデータ（タイトル・説明文・チャンネル名・公開日時）のみを元に、構造化ニュース記事を生成するAIアシスタントです。
 
@@ -85,9 +85,24 @@ JSON形式のみで回答してください。説明文は不要です。`;
         temperature: 0.3
       });
 
-      text = typeof response === 'object' && response !== null && 'response' in response
-        ? String((response as { response: string }).response)
-        : String(response);
+      if (typeof response === 'object' && response !== null) {
+        if ('response' in response && typeof (response as { response: unknown }).response === 'string') {
+          text = (response as { response: string }).response;
+        } else if (response instanceof ReadableStream) {
+          const reader = response.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
+          while (!done) {
+            const { value, done: doneChunk } = await reader.read();
+            done = doneChunk;
+            if (value) text += decoder.decode(value, { stream: !done });
+          }
+        } else {
+          text = JSON.stringify(response);
+        }
+      } else {
+        text = String(response);
+      }
     } catch (err) {
       console.warn(`Workers AI binding call failed (${String(err)}), utilizing source-grounded fallback extraction:`, err);
       // Fallback deterministic metadata extraction for local dev without remote Cloudflare token
@@ -148,12 +163,17 @@ JSON形式のみで回答してください。説明文は不要です。`;
     }
 
     // Validate and normalize
-    return this.validateAndNormalize(parsed);
+    return this.validateAndNormalize(parsed, video.title);
   }
 
-  private validateAndNormalize(raw: Record<string, unknown>): StructuredArticle {
-    const headline = typeof raw.headline === 'string' ? raw.headline : '';
-    const summary = typeof raw.summary === 'string' ? raw.summary : '';
+  private validateAndNormalize(raw: Record<string, unknown>, fallbackTitle: string = ''): StructuredArticle {
+    const headline = typeof raw.headline === 'string' && raw.headline
+      ? raw.headline
+      : (typeof raw.title === 'string' && raw.title ? raw.title : fallbackTitle);
+
+    const summary = typeof raw.summary === 'string' && raw.summary
+      ? raw.summary
+      : (typeof raw.description === 'string' && raw.description ? raw.description : headline);
 
     if (!headline || !summary) {
       throw new Error('AI output missing required headline or summary');
