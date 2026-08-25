@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  fetchYouTubeNews 
+  fetchYouTubeNews,
+  fetchSearchRules,
+  createSearchRule,
+  runSearchRule
 } from './services/api';
 import { 
   NewsItem, 
@@ -170,14 +173,50 @@ export default function App() {
     }
   };
 
+  // Initial Load & Sync D1 Search Rules
   useEffect(() => {
+    fetchSearchRules().then(rules => {
+      if (rules && rules.length > 0) {
+        const d1Keywords = rules.map(r => r.keyword);
+        setKeywords(prev => Array.from(new Set([...prev, ...d1Keywords])));
+      }
+    });
     loadNews();
   }, []);
 
-  // Handle Search Execution from Keyword Manager
-  const handleExecuteKeywordSearch = (newActiveKeywords: string[]) => {
+  // Handle Search Execution from Keyword Manager (Create D1 Rule -> Manual Run -> Refresh Feed)
+  const handleExecuteKeywordSearch = async (newActiveKeywords: string[]) => {
     setActiveKeywords(newActiveKeywords);
-    loadNews(newActiveKeywords);
+    setIsLoading(true);
+
+    try {
+      // 1. Fetch current D1 rules
+      const existingRules = await fetchSearchRules();
+      const existingMap = new Map(existingRules.map(r => [r.keyword, r.id]));
+
+      // 2. For each active keyword not yet in D1, create search rule
+      for (const kw of newActiveKeywords) {
+        if (!existingMap.has(kw)) {
+          const created = await createSearchRule(kw);
+          if (created) {
+            existingMap.set(kw, created.id);
+          }
+        }
+      }
+
+      // 3. Trigger manual ingestion run for new/active search rules
+      for (const kw of newActiveKeywords) {
+        const ruleId = existingMap.get(kw);
+        if (ruleId) {
+          await runSearchRule(ruleId);
+        }
+      }
+    } catch (err) {
+      console.warn('D1 search rule sync/run warning:', err);
+    } finally {
+      // 4. Reload news feed from D1 articles
+      await loadNews(newActiveKeywords);
+    }
   };
 
   // Toggle bookmark

@@ -62,22 +62,17 @@ LINE Channel Subscriber
 
 ## 8. Admin Security & Secrets Boundary
 - `/admin` and `/api/admin/*` paths MUST be protected via Cloudflare Access in Production.
-- Cloudflare Access authentication end-to-end verified for protected routes while public routes (`/`, `/n/*`, `/api/health`, `/api/articles`) remain publicly accessible.
+- Cloudflare Access authentication end-to-end verified for protected routes while public routes (`/`, `/n/*`, `/api/health`, `/api/articles`, `/api/search-rules`) remain publicly accessible.
 - Secrets (`YOUTUBE_API_KEY`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_TARGET_ID`) MUST NEVER be committed to Git or written to source files or logs. Verified Cloudflare Secrets stored remotely.
 
-## 9. Development Lifecycle Policy
+## 9. Keyword & Theme Contracts
+- **KeywordManager Connection**: KeywordManager is connected to canonical D1 `search_rules` CRUD (`POST /api/admin/search-rules`).
+- **Immediate Ingestion Run**: New keyword registration triggers immediate manual pipeline execution (`POST /api/admin/search-rules/:id/run`) followed by automatic article feed refresh (`GET /api/articles`).
+- **Theme Toggle Contract**: Light/Dark theme mode is persistently toggled via Tailwind class configuration (`darkMode: 'class'`) and stored in `localStorage` (`yt_news_theme_v1`).
+
+## 10. Development Lifecycle Policy
 - **Graphify First Rule**: Baseline knowledge graph MUST be checked/established BEFORE scaffolding or writing any code.
 - Verification steps (lint -> typecheck -> test -> build -> local runtime -> browser -> production deploy -> graphify final validation) MUST be executed sequentially.
-
-## 10. Phase 1 Verified Implementation Facts
-- **Actual Folder Structure**: `src/index.ts` (Worker), `web/` (React SPA), `migrations/0000_init.sql` (D1), `scripts/graphify/` (Graphify pipeline), `graphify-out/graph.json` (Artifact).
-- **Actual Worker Entrypoint**: `src/index.ts` exporting Hono app (`/api/health`) and `scheduled` cron handler.
-- **Actual Static Assets Config**: `assets.directory = "./dist"`, `assets.not_found_handling = "single-page-application"` configured in `wrangler.jsonc`.
-- **Actual D1 Binding**: `d1_databases[0].binding = "DB"`, `database_name = "newswatch-line-db"`, `database_id = "d6f1b2b9-8c1e-4ec8-b31d-ed93f30c4094"`.
-- **Actual Workers AI Binding**: `ai.binding = "AI"`.
-- **Actual Cron Trigger**: `triggers.crons = ["*/5 * * * *"]`.
-- **Actual Migration Files**: `migrations/0000_init.sql` and `migrations/0001_articles_enhance.sql` (Both executed and verified on production D1).
-- **Actual Graphify Check Command**: `npm run graphify:check`.
 
 ## 11. Full Production Architecture Verified Implementation Facts
 - **Verified News & Politics Category ID**: `25` (`videoCategories.list` with `regionCode=JP`, `hl=ja` confirmed ID `25` as `ニュースと政治`).

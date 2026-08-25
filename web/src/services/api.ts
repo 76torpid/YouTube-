@@ -80,3 +80,59 @@ export async function fetchYouTubeNews(_filters: Partial<SearchFilterState>): Pr
 export async function analyzeNewsLocation(_title: string, _summary: string, _channelName?: string) {
   return null;
 }
+
+export interface SearchRuleItem {
+  id: number;
+  keyword: string;
+  interval_minutes: number;
+  enabled: number;
+  published_within_hours: number;
+  last_checked_at?: string;
+}
+
+export async function fetchSearchRules(): Promise<SearchRuleItem[]> {
+  try {
+    const res = await fetch('/api/search-rules');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.rules || [];
+  } catch (e) {
+    console.warn('Failed to fetch search rules', e);
+    return [];
+  }
+}
+
+export async function createSearchRule(keyword: string): Promise<SearchRuleItem | null> {
+  try {
+    const res = await fetch('/api/admin/search-rules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyword, interval_minutes: 15, enabled: 1, published_within_hours: 24 })
+    });
+    if (!res.ok) {
+      console.warn('Create search rule response not ok:', res.status);
+      return null;
+    }
+    const data = await res.json();
+    return data.rule || null;
+  } catch (e) {
+    console.error('Failed to create search rule:', e);
+    return null;
+  }
+}
+
+export async function runSearchRule(ruleId: number): Promise<{ fetched: number; inserted: number; duplicates: number } | null> {
+  try {
+    const res = await fetch(`/api/admin/search-rules/${ruleId}/run`, {
+      method: 'POST'
+    });
+    if (!res.ok) {
+      console.warn('Run search rule response not ok:', res.status);
+      return null;
+    }
+    return await res.json();
+  } catch (e) {
+    console.error(`Failed to run search rule ${ruleId}:`, e);
+    return null;
+  }
+}

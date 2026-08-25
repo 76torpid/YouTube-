@@ -352,11 +352,19 @@ app.get('/n/*', async (c) => {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>NewsWatch | YouTubeニュース現場マップ＆AI要約</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind = {
+        config: {
+          darkMode: 'class'
+        }
+      }
+    </script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script type="module" src="/assets/index-DyGZ6qeB.js"></script>
     <link rel="stylesheet" href="/assets/index--JtZQWZH.css">
   </head>
-  <body class="bg-slate-900 text-slate-100 antialiased overflow-x-hidden">
+  <body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-red-500 selection:text-white">
     <div id="root"></div>
   </body>
 </html>`);
