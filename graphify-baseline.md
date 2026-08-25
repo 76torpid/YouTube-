@@ -5,7 +5,6 @@
 - **Repository**: `newswatch-line`
 - **Local Directory**: `i:/マイドライブ/news_akimu/newswatch-line`
 - **Production Domain**: `news.akimu.org` (Production URL: `https://news.akimu.org`)
-- **Deployed Worker Origin**: `https://newswatch-line.2580alarm.workers.dev`
 - **Cloudflare Worker**: `newswatch-line`
 - **Cloudflare D1 Database**: `newswatch-line-db` (`d6f1b2b9-8c1e-4ec8-b31d-ed93f30c4094`)
 - **Forbidden Legacy Domain Notice**: Legacy domain references are strictly forbidden. Production domain is news.akimu.org only.
@@ -44,7 +43,7 @@ LINE Channel Subscriber
 - **Primary Canonical Duplicate Key**: `YouTube videoId`
 - `videos.video_id` MUST have UNIQUE / PRIMARY KEY constraint in D1.
 - Duplicate `videoId` found during ingestion MUST be skipped without further AI processing or notification.
-- Notifications MUST check `notifications` table per `article_id + destination_type + destination_hash` to prevent re-sending the same article to the same destination. Verified in production pipeline (`fetched: 10, inserted: 0, duplicates: 10, aiGenerated: 0, lineSent: 0`).
+- Notifications MUST check `notifications` table per `article_id + destination_type + destination_hash` to prevent re-sending the same article to the same destination. Verified in production pipeline (`fetched: 10, inserted: 0, duplicates: 10`).
 
 ## 5. AI Source Boundary & Hallucination Guard
 - **Source Basis**: `youtube_metadata` ONLY. Input to AI is restricted to `title`, `description`, `channelTitle`, `publishedAt`.
@@ -63,8 +62,8 @@ LINE Channel Subscriber
 
 ## 8. Admin Security & Secrets Boundary
 - `/admin` and `/api/admin/*` paths MUST be protected via Cloudflare Access in Production.
-- Secrets (`YOUTUBE_API_KEY`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_TARGET_ID`) MUST NEVER be committed to Git or written to source files or logs.
-- Verified Cloudflare Secrets stored remotely: `YOUTUBE_API_KEY`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_TARGET_ID`.
+- Self-hosted Cloudflare Access Application `NewsWatch Admin` (`news.akimu.org/admin`, `news.akimu.org/api/admin`) created and active. Unauthenticated requests redirect to Cloudflare Access Login page.
+- Secrets (`YOUTUBE_API_KEY`, `LINE_CHANNEL_ACCESS_TOKEN`, `LINE_TARGET_ID`) MUST NEVER be committed to Git or written to source files or logs. Verified Cloudflare Secrets stored remotely.
 
 ## 9. Development Lifecycle Policy
 - **Graphify First Rule**: Baseline knowledge graph MUST be checked/established BEFORE scaffolding or writing any code.
@@ -89,4 +88,5 @@ LINE Channel Subscriber
 - **Actual Articles API Routes**: `GET /api/articles` (JOIN `articles` & `videos`), `GET /api/articles/:id`.
 - **Actual Workers AI Service**: `ArticleGenerationService` (`src/services/ai/index.ts`) generating structured JSON using `@cf/meta/llama-3.1-8b-instruct-fast`.
 - **Actual LINE Service**: `LineNotificationService` (`src/services/line/index.ts`) with `notifications` table deduplication via `destination_hash`.
-- **Actual Production Deployment**: Deployed to Cloudflare Workers (`newswatch-line`), D1 remote database migrated, Secrets uploaded, E2E ingestion verified (`fetched: 10, inserted: 10, aiGenerated: 10, lineSent: 10`).
+- **Actual Production Deployment**: Deployed to Cloudflare Workers (`newswatch-line`) with custom domain `news.akimu.org`, D1 remote database migrated, Secrets uploaded, E2E ingestion verified (`fetched: 10, inserted: 10, aiGenerated: 10, lineSent: 10`).
+- **Actual Cloudflare Access Application**: Self-hosted application `NewsWatch Admin` (`cad63960-3a6f-498a-9ac4-b3b3b49ca40e`) protecting `news.akimu.org/admin` and `news.akimu.org/api/admin`.
